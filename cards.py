@@ -2,12 +2,27 @@ import random
 import statistics
 
 def print_cards(cardlist: list):
-    for sublist in cardlist:
-        if len(sublist) > 0: 
-            for card in sublist:
-                print(str(card))
-        else:
-            print("[]")
+    if cardlist == []:
+        print('-')
+        return
+    if not isinstance(cardlist, list):
+        print(cardlist)
+        return
+    if isinstance(cardlist[0],list):
+        for sublist in cardlist:
+            print('-')
+            if len(sublist) > 0: 
+                for card in sublist:
+                    print(card)
+            else:
+                print("[]")
+        print('-')
+    else:
+        print('-')
+        for card in cardlist:
+            print(card)
+        print("-")
+        
 
 class Card:
 
@@ -91,6 +106,7 @@ class Deck:
         return print_str
 
 
+
 class Hand:
     def __init__(self, community_cards: list, hole_cards: list):
         self.table_cards = sorted(community_cards + hole_cards)
@@ -98,17 +114,17 @@ class Hand:
     
     def table_values(self):
         #Average of flush rank val is used
-        self.hand_value["Straight Flush"] =  None
-        self.hand_value["Four of a Kind"] = self.four_of_a_kind(self.table_cards)
-        self.hand_value["Flush"] = (self.flush(), self.mean_val(self.flush))
-        self.hand_value["Straight"] = None
-        self.hand_value["Three of a Kind"] = None
-        self.hand_value["Two Pair"] = None
-        self.hand_value["One Pair"] = None
-        self.hand_value["High Card"] = None
-
-
-
+        #bestpair = sort_high_card(get_of_a_kind(self.table_cards)[2])
+        #secondbestpair = sort_high_card(get_of_a_kind(self.table_cards).remove(bestpair)[2])
+        fours, threes, pairs = get_of_a_kind(self.table_cards)
+        self.hand_value["Straight Flush"] =  get_straight_flush(self.table_cards)
+        self.hand_value["Four of a Kind"] = fours[-1] if len(fours) > 0 else [[]]
+        self.hand_value["Flush"] = get_flush(self.table_cards)
+        self.hand_value["Straight"] = get_straight(self.table_cards)
+        self.hand_value["Three of a Kind"] = threes[-1] if len(threes) > 0 else [[]]
+        self.hand_value["Two Pair"] = pairs[-2:] if len(pairs) > 1 else [[]]
+        self.hand_value["One Pair"] = [pairs[-1]] if len(pairs) > 0 else [[]]
+        self.hand_value["High Card"] = [self.table_cards[-1]]
 
     def mean_val(self, myhand: list):
         if len(myhand) > 0 and myhand is not None:
@@ -118,7 +134,10 @@ class Hand:
             return 0
 
     def __str__(self):
-        return "\n".join([str(card) for card in table_cards])
+        bigstring = ""
+        for htype in self.hand_value:
+            bigstring += f"\n{htype}:\n" + "\n".join([str(card) for card in table_cards])
+        return bigstring
 
 class Player:
     def __init__(self, name: str):
@@ -144,40 +163,49 @@ class Table:
         return f"Table:\n${self.pot} in the Pot\n{print_str}"
     
 
-def flush(self, table_cards_orig: list):
-        table_cards = table_cards_orig[:] #take a slice of the original so we don't edit it
-        conseq = [table_cards.pop(0)]
+def get_straight(table_cards: list):
+        table_cards = sorted(table_cards)
+        straight = [[table_cards[0]]]
         #Makes a list of lists of consecutive cards
-        for item in table_cards:
-            if item.rank_val == conseq[-1].rank_val + 1:
-                conseq.append(item)
-                table_cards.remove(item)
-            else:
-                conseq.append(self.flush(table_cards))
-        #Returns a list only if the sequence has 5 or more cards.
-        return [sequence for sequence in conseq if len(sequence) >= 5]
+        for i in range(1,len(table_cards)):
+            #skip any double ups
+            if table_cards[i].rank_val == straight[-1][-1].rank_val:
+                continue
 
-def of_a_kind(cards: list):
+            if table_cards[i].rank_val == straight[-1][-1].rank_val + 1:
+                straight[-1].append(table_cards[i])
+
+        #Returns a list only if the sequence has 5 or more cards.
+        return [sequence for sequence in straight if len(sequence) >= 5]
+
+
+#needs to be fixed (TODO)
+def get_of_a_kind(cards: list):
     card_freq = {}
     for card in cards:
         if card.rank in card_freq:
             card_freq[card.rank] += 1
         else:
             card_freq[card.rank] = 1
-
-    for rank in card_freq:
-        pairs = [card for card in cards if card_freq[card.rank] == 2]
-        threes = [card for card in cards if card_freq[card.rank] == 3]
-        fours = [card for card in cards if card_freq[card.rank] == 4]
+        pairs = []
+        threes = []
+        fours = []
+    for key, value in card_freq.items():
+        if value == 2:
+            pairs.append([card for card in cards if card.rank == key])
+        elif value == 3:
+            threes.append([card for card in cards if card.rank == key])
+        elif value == 4:
+            fours.append([card for card in cards if card.rank == key])
+        else:
+            continue
     
     return fours, threes, pairs
 
-def four_of_a_kind(table_cards: list):
-    freq_dic = self.of_a_kind()
-    return [card for card in table_cards if card.rank == rank]
+
 
 #returns all the cards of the same suit. The highest straight is taken in the dictionary
-def straight(self, table_cards: list):
+def get_flush(table_cards: list):
     suit_dic = {}
     for card in table_cards:
         if card.suit not in suit_dic:
@@ -185,16 +213,55 @@ def straight(self, table_cards: list):
         else:
             suit_dic[card.suit] += 1
 
-    straight = []
+    flush = []
     for suit in Card.suits:
         if suit in suit_dic and suit_dic[suit] >= 5:
-            straight = [card for card in table_cards if card.suit == suit]      
+            flush.append([card for card in table_cards if card.suit == suit])      
         
-    if len(straight) >= 5:
-        return straight
-    else:
-        return None
+    for sequence in flush:
+        if len(sequence) < 5:
+            flush.remove(sequence)
 
+    return flush
+
+def get_straight_flush(table_cards: list):
+    straight_flushes = []
+    flushes = get_flush(table_cards)
+    for flush in flushes:
+        temp_sflush = get_straight(flush)
+        for sflush in temp_sflush:
+            if len(sflush) > 4:
+                straight_flushes.append(sflush)
+    return straight_flushes
+
+
+def get_highest(hand_list: list, card_num: int):
+
+    #finds the best hand from a list of all hands fo the same type
+    #if hand_list length is 1, just return the only hand
+    if len(hand_list) == 0:
+        return None
+    if len(hand_list) == 1:
+        return hand_list[0]
+    #slice it so we dont edit the original
+    best_hands = [sorted(hand)[-card_num:] for hand in hand_list]
+    for i in range(card_num-1,-1,-1):
+        pos_max = max([hand[i].rank_val for hand in best_hands])
+        for hand in best_hands:
+            if hand[i].rank_val < pos_max:
+                best_hands.remove(hand)
+    return best_hands
+        
+
+
+    
+    
+
+    
+        
+        
+
+        
 
 """
 class Play:
@@ -211,18 +278,44 @@ pcards = [Card("7","Spades"),Card("9","Spades")]
 best_hand = Hand(comcards, pcards)
 print_cards(best_hand.flush())
 """
-#test_cards = [Card(str(i),'Spades') for i in range(2,7)] +  [Card("7", 'Hearts')]
+test_cards = [[Card(str(i),'Spades') for i in range(2,7)], [Card(str(i),'Hearts') for i in range(3,8)]]
+#test_cards = [[Card('2','Spades'), Card('6','Spades')], [Card('7', 'Spades'), Card('2', 'Spades'), Card('6','Spades')]]
+mydeck = Deck()
+kuba = Player('Kuba')
+mytable = Table()
 
-test_cards = [Card("2", "Spades") for i in range(2,4)] + [Card("10", "Spades") for i in range(2,5)] + [Card("3", "Spades") for i in range(2,6)]
+mydeck.deal_community(mytable, 10)
+mydeck.deal_player(kuba, 10)
 
-print_cards(of_a_kind(test_cards))
+#myhand = Hand(test_cards, [])
+myhand = Hand(mytable.community_cards, kuba.hole_cards)
+myhand.table_values()
+
+
+for hand_type in myhand.hand_value:
+    print(f"{hand_type}:")
+    print('-')
+    print_cards(myhand.hand_value[hand_type])
+    print('-')
+"""
+#print_cards(test_cards)
+print_cards(get_highest(test_cards,1))
+
+#test_cards = [Card(str(i), "Spades") for i in range(7,2,-1)] + [Card(str(i), "Hearts") for i in range(3,11)] + [Card("3", "Spades") for i in range(2,6)]
+
+myflush = get_straight_flush(kuba.hole_cards + mytable.community_cards)
+print_cards(myflush)
+#print_cards(sort_high_card(myflush))
+#print('hmm')
+
+
 
 
 
 
 
 #test for dubs
-"""
+
 myhand = Hand(cards, pcards)
 
 
