@@ -129,24 +129,35 @@ class Hand:
         #Average of flush rank val is used
         #bestpair = sort_high_card(get_of_a_kind(self.table_cards)[2])
         #secondbestpair = sort_high_card(get_of_a_kind(self.table_cards).remove(bestpair)[2])
+        
+        straight_flushes = get_straight_flush(self.table_cards)
+        straight_flush = [sorted(straight_flushes, key = lambda x : max(x))][-1] if straight_flushes[0] else [[]]
+        self.hand_value["Straight Flush"] =  straight_flush
+
         fours, threes, pairs = get_of_a_kind(self.table_cards)
-        self.hand_value["Straight Flush"] =  get_straight_flush(self.table_cards)
-        self.hand_value["Four of a Kind"] = fours[-1] if len(fours) > 0 else [[]]
-        self.hand_value["Flush"] = get_flush(self.table_cards)
-        self.hand_value["Straight"] = get_straight(self.table_cards)
-        self.hand_value["Three of a Kind"] = threes[-1] if len(threes) > 0 else [[]]
+        self.hand_value["Four of a Kind"] = [fours[-1]] if len(fours) > 0 else [[]]
+        self.hand_value["Three of a Kind"] = [threes[-1]] if len(threes) > 0 else [[]]
         self.hand_value["Two Pair"] = pairs[-2:] if len(pairs) > 1 else [[]]
         self.hand_value["One Pair"] = [pairs[-1]] if len(pairs) > 0 else [[]]
         self.hand_value["Full House"] = [pairs[-1], threes[-1]] if len(pairs)>0 and len(threes) > 0 else [[]]
+
+        
+        flushes = [flush[-5:] for flush in get_flush(self.table_cards)] if len(get_flush(self.table_cards)) > 0 else [[]]
+        self.hand_value["Flush"] = [sorted(flushes, key = lambda x: max(x))][-1] if flushes[0] else [[]]
+
+        straights = [straight[-5:] for straight in get_straight(self.table_cards)] if len(get_straight(self.table_cards)) > 0 else [[]]
+        self.hand_value["Straight"] = [sorted(straights, key = lambda x: max(x))][-1] if straights[0] else [[]]
+        
         self.hand_value["High Card"] = [self.table_cards[-1]]
 
-        #update the best hand
-        self.best_hand = self.get_best_hand()
+
 
     def get_best_hand(self):
-        for type in self.hand_value:
-            if len(self.hand_value[type]) > 0:
-                return (type, get_highest(self.hand_value[type],5))
+        for type in self.name:
+            if self.hand_value[type][-1]:
+                if type == 'Two Pair' or type == 'Full House':
+                    return type, self.hand_value[type][-2:]
+                return type, self.hand_value[type][-1]
 
 
     def mean_val(self, myhand: list):
@@ -175,6 +186,8 @@ class Player:
     def update_hand(self):
         self.hand = Hand(self.table.community_cards, self.hole_cards)
         self.hand.table_values()
+        self.hand.best_hand = self.hand.get_best_hand()
+        
     
     def __str__(self):
         print_cards = ""
@@ -272,6 +285,10 @@ def get_flush(table_cards: list):
 def get_straight_flush(table_cards: list):
     straight_flushes = []
     flushes = get_flush(table_cards)
+    #return empty nested list if no flushes
+    if flushes == [[]]:
+        return flushes 
+    
     for flush in flushes:
         temp_sflush = get_straight(flush)
         for sflush in temp_sflush:
@@ -281,11 +298,10 @@ def get_straight_flush(table_cards: list):
     if len(straight_flushes) == 0:
         return [[]]
     
-    return straight_flushes
+    return [st_flush[-5:] for st_flush in straight_flushes]
 
 
 def get_highest(hand_list: list, card_num: int):
-
     #finds the best hand from a list of all hands fo the same type
     #if hand_list length is 1, just return the only hand
     if len(hand_list) == 0:
@@ -302,9 +318,12 @@ def get_highest(hand_list: list, card_num: int):
     return best_hands
         
 
+"""
+l1 = [[Card(str(i), 'Spades') for i in range(2,8)],  [[Card(str(i), 'Spades') for i in range(3,9)]]]
+best = sorted(l1, key = lambda x: max(x))
+print_cards(best)
+ """
 
-    
-
-    
+   
         
        
