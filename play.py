@@ -39,3 +39,4 @@ print_cards(table.community_cards)
 for player in table.players:
     print(player.name)
     print_cards(player.hand.hand_value)
+

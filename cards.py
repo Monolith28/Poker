@@ -122,6 +122,8 @@ class Hand:
         self.table_cards = sorted(community_cards + hole_cards)
         self.hand_value = {}
         self.best_hand = None
+
+    name = ["Straight Flush", "Four of a Kind", "Full House" , "Flush", "Straight", "Three of a Kind", "Two Pair", "One Pair",  "High Card" ]
     
     def table_values(self):
         #Average of flush rank val is used
@@ -135,6 +137,7 @@ class Hand:
         self.hand_value["Three of a Kind"] = threes[-1] if len(threes) > 0 else [[]]
         self.hand_value["Two Pair"] = pairs[-2:] if len(pairs) > 1 else [[]]
         self.hand_value["One Pair"] = [pairs[-1]] if len(pairs) > 0 else [[]]
+        self.hand_value["Full House"] = [pairs[-1], threes[-1]] if len(pairs)>0 and len(threes) > 0 else [[]]
         self.hand_value["High Card"] = [self.table_cards[-1]]
 
         #update the best hand
@@ -261,6 +264,9 @@ def get_flush(table_cards: list):
         if len(sequence) < 5:
             flush.remove(sequence)
 
+    if len(flush) == 0:
+        return [[]]
+    
     return flush
 
 def get_straight_flush(table_cards: list):
@@ -271,6 +277,10 @@ def get_straight_flush(table_cards: list):
         for sflush in temp_sflush:
             if len(sflush) > 4:
                 straight_flushes.append(sflush)
+                
+    if len(straight_flushes) == 0:
+        return [[]]
+    
     return straight_flushes
 
 
@@ -294,72 +304,7 @@ def get_highest(hand_list: list, card_num: int):
 
 
     
-thathand = Hand([],[])
-print(thathand)
 
     
         
-        
-
-        
-
-"""
-class Play:
-    def __init_(self):
-        pass
-    
-    def deal(self, player: int):
-
-
-#test for flush
-comcards = [Card("2","Spades"), Card("3","Spades"), Card("4","Spades"), Card("5","Spades"), Card("6","Spades")]
-pcards = [Card("7","Spades"),Card("9","Spades")]
-
-best_hand = Hand(comcards, pcards)
-print_cards(best_hand.flush())
-
-test_cards = [[Card(str(i),'Spades') for i in range(2,7)], [Card(str(i),'Hearts') for i in range(3,8)]]
-#test_cards = [[Card('2','Spades'), Card('6','Spades')], [Card('7', 'Spades'), Card('2', 'Spades'), Card('6','Spades')]]
-mydeck = Deck()
-kuba = Player('Kuba')
-mytable = Table()
-
-mydeck.deal_community(mytable, 10)
-mydeck.deal_player(kuba, 10)
-
-#myhand = Hand(test_cards, [])
-myhand = Hand(mytable.community_cards, kuba.hole_cards)
-myhand.table_values()
-
-
-for hand_type in myhand.hand_value:
-    print(f"{hand_type}:")
-    print('-')
-    print_cards(myhand.hand_value[hand_type])
-    print('-')
-
-#print_cards(test_cards)
-print_cards(get_highest(test_cards,1))
-
-#test_cards = [Card(str(i), "Spades") for i in range(7,2,-1)] + [Card(str(i), "Hearts") for i in range(3,11)] + [Card("3", "Spades") for i in range(2,6)]
-
-myflush = get_straight_flush(kuba.hole_cards + mytable.community_cards)
-print_cards(myflush)
-#print_cards(sort_high_card(myflush))
-#print('hmm')
-
-
-
-
-
-
-
-#test for dubs
-
-myhand = Hand(cards, pcards)
-
-
-flush = myhand.straight()[0]
-straighthand = Hand(straight,[])
-print(straighthand.flush())
-"""
+       
