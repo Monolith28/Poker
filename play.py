@@ -1,5 +1,9 @@
 from cards import Player, Hand, Deck, Table, print_cards, Card
 
+#TODO: Put cards back in deck after round, implement betting, implement auto detection of winning hand
+#implement kicker card and pot splitting.
+
+
 def print_all_hands(table):
     players = table.players
 
@@ -43,7 +47,9 @@ def print_all_hands(table):
 
 
     print(f"{player_names[0]:<20}{player_names[1]:<20}{player_names[2]:<20}")
+    print(f"{'-'*16:<20}{'-'*16:<20}{'-'*16:<20}")
     print(f"{best_hand_names[0]:<20}{best_hand_names[1]:<20}{best_hand_names[2]:<20}")
+    print(f"{'-'*16:<20}{'-'*16:<20}{'-'*16:<20}")
     for i in range(card_rows):
         print(f"{data[i][0]:<20}{data[i][1]:<20}{data[i][2]:<20}")
         
