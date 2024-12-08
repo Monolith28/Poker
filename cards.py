@@ -80,6 +80,7 @@ class Card:
 class Deck:
     def __init__(self):
         self.cards = self.new_deck()
+        self.table = None
 
     def new_deck(self):
         card_list = []
@@ -94,10 +95,18 @@ class Deck:
     def deal_player(self, player, qty: int):
         for i in range(qty):
             player.hole_cards.append(self.draw_card())
+        self.update_all_hands()
     
     def deal_community(self, table, qty: int):
         for i in range(qty):
             table.community_cards.append(self.draw_card())
+        self.update_all_hands()
+    
+    #nifty little function to update everyones hands, is called after a card is dealt to a player or the table
+    def update_all_hands(self):
+        for player in self.table.players:
+            player.update_hand()
+
 
     def __str__(self):
         print_str = ""
@@ -136,14 +145,22 @@ class Hand:
     def __str__(self):
         bigstring = ""
         for htype in self.hand_value:
-            bigstring += f"\n{htype}:\n" + "\n".join([str(card) for card in table_cards])
+            bigstring += f"\n{htype}:\n" + "\n".join([str(card) for card in self.hand_value])
         return bigstring
-
+    
+#Initialises a player
 class Player:
     def __init__(self, name: str):
         self.name = name
         self.hole_cards = []
         self.chips = 0
+        self.table = None
+        self.hand = None
+
+#after a card is dealt from the deck class, it updates all players hands at the table
+    def update_hand(self):
+        self.hand = Hand(self.table.community_cards, self.hole_cards)
+        self.hand.table_values
     
     def __str__(self):
         print_cards = ""
@@ -151,10 +168,21 @@ class Player:
             print_cards += f"{mycard}\n"
         return f"{self.name}:\n{print_cards}"
 
+#initialises an empty playing table
 class Table:
     def __init__(self):
+        self.deck = None
+        self.players = []
         self.community_cards = []
         self.pot = 0
+    
+    def add_deck(self, deck):
+        self.deck = deck
+        deck.table = self
+
+    def add_player(self, player):
+        self.players.append(player)
+        player.table = self
     
     def __str__(self):
         print_str = ""
@@ -255,7 +283,8 @@ def get_highest(hand_list: list, card_num: int):
 
 
     
-    
+thathand = Hand([],[])
+print(thathand)
 
     
         
@@ -277,7 +306,7 @@ pcards = [Card("7","Spades"),Card("9","Spades")]
 
 best_hand = Hand(comcards, pcards)
 print_cards(best_hand.flush())
-"""
+
 test_cards = [[Card(str(i),'Spades') for i in range(2,7)], [Card(str(i),'Hearts') for i in range(3,8)]]
 #test_cards = [[Card('2','Spades'), Card('6','Spades')], [Card('7', 'Spades'), Card('2', 'Spades'), Card('6','Spades')]]
 mydeck = Deck()
@@ -297,7 +326,7 @@ for hand_type in myhand.hand_value:
     print('-')
     print_cards(myhand.hand_value[hand_type])
     print('-')
-"""
+
 #print_cards(test_cards)
 print_cards(get_highest(test_cards,1))
 
