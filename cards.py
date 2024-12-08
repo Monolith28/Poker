@@ -95,7 +95,8 @@ class Deck:
     def deal_player(self, player, qty: int):
         for i in range(qty):
             player.hole_cards.append(self.draw_card())
-        self.update_all_hands()
+        
+        player.update_hand()
     
     def deal_community(self, table, qty: int):
         for i in range(qty):
@@ -120,6 +121,7 @@ class Hand:
     def __init__(self, community_cards: list, hole_cards: list):
         self.table_cards = sorted(community_cards + hole_cards)
         self.hand_value = {}
+        self.best_hand = None
     
     def table_values(self):
         #Average of flush rank val is used
@@ -134,6 +136,15 @@ class Hand:
         self.hand_value["Two Pair"] = pairs[-2:] if len(pairs) > 1 else [[]]
         self.hand_value["One Pair"] = [pairs[-1]] if len(pairs) > 0 else [[]]
         self.hand_value["High Card"] = [self.table_cards[-1]]
+
+        #update the best hand
+        self.best_hand = self.get_best_hand()
+
+    def get_best_hand(self):
+        for type in self.hand_value:
+            if len(self.hand_value[type]) > 0:
+                return (type, get_highest(self.hand_value[type],5))
+
 
     def mean_val(self, myhand: list):
         if len(myhand) > 0 and myhand is not None:
@@ -160,7 +171,7 @@ class Player:
 #after a card is dealt from the deck class, it updates all players hands at the table
     def update_hand(self):
         self.hand = Hand(self.table.community_cards, self.hole_cards)
-        self.hand.table_values
+        self.hand.table_values()
     
     def __str__(self):
         print_cards = ""
@@ -207,7 +218,7 @@ def get_straight(table_cards: list):
         return [sequence for sequence in straight if len(sequence) >= 5]
 
 
-#needs to be fixed (TODO)
+
 def get_of_a_kind(cards: list):
     card_freq = {}
     for card in cards:

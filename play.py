@@ -22,7 +22,7 @@ for player in table.players:
 prompt = input("Deal Flop cards (Enter)")
 
 
-table.deck.deal_community(table,3)
+table.deck.deal_community(table,10)
 print("Flop Cards:")
 print_cards(table.community_cards)
 
@@ -37,5 +37,5 @@ print("River:")
 print_cards(table.community_cards)
 
 for player in table.players:
-    print(player)
+    print(player.name)
     print_cards(player.hand.hand_value)
