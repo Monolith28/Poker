@@ -172,14 +172,9 @@ class Hand:
         else:
             clean_hand = [card for card in bhand]
 
-
-        
-            
-            
-
         n_high = 5 - len(clean_hand)
 
-        kickers = sorted([card for card in self.table_cards if card not in clean_hand])[-n_high:]
+        kickers = sorted([card for card in self.table_cards if card not in clean_hand])[-1:]
         
         return kickers
 
@@ -202,10 +197,10 @@ class Hand:
     
 #Initialises a player
 class Player:
-    def __init__(self, name: str):
+    def __init__(self, name: str, chips: float):
         self.name = name
         self.hole_cards = []
-        self.chips = 0
+        self.chips = chips
         self.table = None
         self.hand = None
 
@@ -216,7 +211,24 @@ class Player:
         self.hand.best_hand = self.hand.get_best_hand()
         self.hand.kickers = self.hand.get_kickers()
         
-    
+    def bet(self):
+        hardcoded = True
+        while True:
+            if hardcoded == True:
+                amount = 1
+            else:
+                amount = int(input(f"{self.name} raises by amount (0 to check):"))
+
+            if self.chips < amount:
+                print('Insufficient funds')
+                continue
+            else:
+                self.chips -= amount
+                self.table.pot += amount
+                break
+        
+
+        
     def __str__(self):
         print_cards = ""
         for mycard in self.hole_cards:
@@ -329,30 +341,3 @@ def get_straight_flush(table_cards: list):
     return [st_flush[-5:] for st_flush in straight_flushes]
 
 
-def winning_hand(players: list):
-
-    #finds the best hand from a list of all hands fo the same type
-    #if hand_list length is 1, just return the only hand
-    if len(hand_list) == 0:
-        return None
-    if len(hand_list) == 1:
-        return hand_list[0]
-    #slice it so we dont edit the original
-    best_hands = [sorted(hand)[-card_num:] for hand in hand_list]
-    for i in range(card_num-1,-1,-1):
-        pos_max = max([hand[i].rank_val for hand in best_hands])
-        for hand in best_hands:
-            if hand[i].rank_val < pos_max:
-                best_hands.remove(hand)
-    return best_hands
-        
-
-"""
-l1 = [[Card(str(i), 'Spades') for i in range(2,8)],  [[Card(str(i), 'Spades') for i in range(3,9)]]]
-best = sorted(l1, key = lambda x: max(x))
-print_cards(best)
- """
-
-   
-        
-       

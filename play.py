@@ -3,6 +3,10 @@ import copy
 
 #TODO: Put cards back in deck after round, implement betting, implement auto detection of winning hand
 #implement kicker card and pot splitting.
+def place_bets(table):
+    for player in table.players:
+        player.bet()
+    print(f"${table.pot: .1f} in the pot")
 
 def get_winner(table: Table):
     players = table.players
@@ -106,58 +110,75 @@ def print_all_hands(table):
 
         
 
+def play_round(table: Table):
+    for player in table.players:
+        print(f"{player.name}: ${player.chips}")
 
-players = [Player("Tom"), Player("Harry"), Player("John")]
+    prompt = input("Deal player cards (Enter)")
+
+    for player in table.players:
+        table.deck.deal_player(player,2)
+
+    for player in table.players:
+        print(player.name)
+        print_cards(player.hole_cards)
+
+    place_bets(table)
+    prompt = input("Deal Flop cards (Enter)")
+
+
+    table.deck.deal_community(table,3)
+    print("Flop Cards:")
+    print_cards(table.community_cards)
+    place_bets(table)
+
+    prompt = input("Deal Turn Card (Enter)")
+
+    table.deck.deal_community(table,1)
+    print("Turn:")
+    print_cards(table.community_cards)
+
+    place_bets(table)
+    prompt = input("Deal River Card (Enter)")
+    table.deck.deal_community(table,1)
+    print("River:")
+    print_cards(table.community_cards)
+
+    print_all_hands(table)
+    print()
+    round_winners = get_winner(table)
+
+    reward = table.pot/len(round_winners)
+    table.pot = 0
+
+    if len(round_winners) > 1:
+        winners = ", ".join([player.name for player in round_winners])
+        print(f"{winners} split the pot for ${reward} each.")
+        for player in round_winners:
+            player.chips += reward
+
+    else:
+        print(f"{round_winners[0].name} wins ${reward}")
+        round_winners[0].chips += reward
+    
+    #return cards to the deck
+    table.deck.cards += table.community_cards
+    table.community_cards = []
+    for player in table.players:
+        player.hole_cards = []
+
+players = [Player("Tom", 100), Player("Harry",100), Player("John",100)]
 deck = Deck()
-
 table = Table()
-table.add_deck(deck)
 
+table.add_deck(deck)
 
 for player in players:
     table.add_player(player)
+n_rounds = int(input("How many rounds?"))
 
-prompt = input("Deal player cards (Enter)")
+for i in range(n_rounds):
+    play_round(table)
 
 for player in table.players:
-    table.deck.deal_player(player,2)
-
-for player in table.players:
-    print(player.name)
-    print_cards(player.hole_cards)
-
-prompt = input("Deal Flop cards (Enter)")
-
-
-table.deck.deal_community(table,3)
-print("Flop Cards:")
-print_cards(table.community_cards)
-
-prompt = input("Deal Turn Card (Enter)")
-
-table.deck.deal_community(table,1)
-print("Turn:")
-print_cards(table.community_cards)
-
-prompt = input("Deal River Card (Enter)")
-table.deck.deal_community(table,1)
-print("River:")
-print_cards(table.community_cards)
-
-print_all_hands(table)
-print()
-round_winners = get_winner(table)
-for winner in round_winners:
-    print(winner.name)
-
-print('testpoint')
-
-"""
-if len(round_winners) > 1: 
-    winstring = ", ".join([winner.name for winner in round_winners])
-    print(f"The tied winners are {winstring} with {round_winners[0].hand.best_hand[0]}")
-elif len(round_winners) == 1:
-    print(f"The winner is {round_winners[0].name} with {round_winners[0].hand.best_hand[0]}")
-
-print()
-"""
+    print(f"{player.name}: ${player.chips}")
