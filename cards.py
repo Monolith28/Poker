@@ -122,6 +122,7 @@ class Hand:
         self.table_cards = sorted(community_cards + hole_cards)
         self.hand_value = {}
         self.best_hand = None
+        self.kickers = None
 
     name = ["Straight Flush", "Four of a Kind", "Full House" , "Flush", "Straight", "Three of a Kind", "Two Pair", "One Pair",  "High Card" ]
     
@@ -158,6 +159,31 @@ class Hand:
                 if type == 'Two Pair' or type == 'Full House':
                     return type, self.hand_value[type][-2:]
                 return type, self.hand_value[type][-1]
+    
+    def get_kickers(self):
+        clean_hand = []
+        bhand = self.best_hand[1]
+        if isinstance(bhand, Card):
+            clean_hand = [bhand]
+
+        elif all(isinstance(thing,list) for thing in bhand):
+            clean_hand = bhand[0] + bhand[1]
+        else:
+            clean_hand = [card for card in bhand]
+
+
+        
+            
+            
+
+        n_high = 5 - len(clean_hand)
+
+        kickers = sorted([card for card in self.table_cards if card not in clean_hand])[-n_high:]
+        
+        return kickers
+
+
+        
 
 
     def mean_val(self, myhand: list):
@@ -187,6 +213,7 @@ class Player:
         self.hand = Hand(self.table.community_cards, self.hole_cards)
         self.hand.table_values()
         self.hand.best_hand = self.hand.get_best_hand()
+        self.hand.kickers = self.hand.get_kickers()
         
     
     def __str__(self):
@@ -301,7 +328,8 @@ def get_straight_flush(table_cards: list):
     return [st_flush[-5:] for st_flush in straight_flushes]
 
 
-def get_highest(hand_list: list, card_num: int):
+def winning_hand(players: list):
+
     #finds the best hand from a list of all hands fo the same type
     #if hand_list length is 1, just return the only hand
     if len(hand_list) == 0:
