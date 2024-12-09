@@ -123,6 +123,7 @@ class Hand:
         self.hand_value = {}
         self.best_hand = None
         self.kickers = None
+        self.hand_strength = None
 
     name = ["Straight Flush", "Four of a Kind", "Full House" , "Flush", "Straight", "Three of a Kind", "Two Pair", "One Pair",  "High Card" ]
     

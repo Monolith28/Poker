@@ -4,37 +4,37 @@ import copy
 #TODO: Put cards back in deck after round, implement betting, implement auto detection of winning hand
 #implement kicker card and pot splitting.
 
-def get_winner(table):
-    players = self.players
+def get_winner(table: Table):
+    players = table.players
     power_level = []
 
-    for player in players[1:]:
-        hname = Hand.name.index(player.best_hand[0])
+    for player in players:
+        best_hand = player.hand.best_hand
+        hname = best_hand[0]
+        htype = Hand.name.index(best_hand[0])
         if hname == "High Card":
-            
+            hrank = [best_hand[1].rank_val, 0]
+        elif hname == "Two Pair" or hname == "Full House":
+            hrank = [best_hand[1][1][-1].rank_val, best_hand[1][0][-1].rank_val ]
+        else:
+            hrank = [best_hand[1][-1].rank_val , 0]
+
+        kickval = player.hand.kickers[-1].rank_val
+
+        player.hand.hand_strength = (len(Hand.name) - htype, hrank[0], hrank[1], kickval)
+
+    winners = players[:]
+    for i in range(4):
+        highest = max([player.hand.hand_strength[i] for player in winners])
+        temp_winners = []
+        for player in winners:
+            if player.hand.hand_strength[i] == highest:
+                temp_winners.append(player)
+        winners = temp_winners
+
+    return [player for player in winners]
 
 
-            
-                
-    
-    
-
-
-        
-def higher_than(this_hand, another_hand):
-    
-
-
-
-    
-    
-    
-
-
-
-
-
-    
 
 
 
@@ -55,9 +55,16 @@ def print_all_hands(table):
             clean_hands.append(hand[0] + hand[1])
         else:
             clean_hands.append(hand)
-    
-    row_count = max([len(hand) for hand in clean_hands])
+
+    #reverse direction to print highest first     
+
+    rev_clean_hands = []
     for hand in clean_hands:
+        rev_clean_hands.append(hand[::-1])
+
+    row_count = max([len(hand) for hand in rev_clean_hands])
+
+    for hand in rev_clean_hands:
         while len(hand) < row_count:
             hand.append(" ")
     
@@ -79,20 +86,11 @@ def print_all_hands(table):
         new_row = [str(sequence[i]) for sequence in kickers]
         kick_rows.append(new_row)
 
-
-
-    
-
     card_rows = max([len(hand) for hand in clean_hands])
-
-    #pad the shorter hands out with whitespace
-    for hand in clean_hands:
-        while len(hand) < card_rows:
-            hand.append(" ")
 
     data = []
     for i in range(card_rows):
-        new_row = [str(hand[i]) for hand in clean_hands]
+        new_row = [str(hand[i]) for hand in rev_clean_hands]
         data.append(new_row)
 
     print(f"{player_names[0]:<20}{player_names[1]:<20}{player_names[2]:<20}")
@@ -147,3 +145,19 @@ print("River:")
 print_cards(table.community_cards)
 
 print_all_hands(table)
+print()
+round_winners = get_winner(table)
+for winner in round_winners:
+    print(winner.name)
+
+print('testpoint')
+
+"""
+if len(round_winners) > 1: 
+    winstring = ", ".join([winner.name for winner in round_winners])
+    print(f"The tied winners are {winstring} with {round_winners[0].hand.best_hand[0]}")
+elif len(round_winners) == 1:
+    print(f"The winner is {round_winners[0].name} with {round_winners[0].hand.best_hand[0]}")
+
+print()
+"""
