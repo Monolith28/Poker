@@ -1,33 +1,57 @@
-from cards import Player, Hand, Deck, Table, print_cards, Card
+from cards import Player, Hand, Deck, Table, print_cards, Card, get_hand_strength
 import copy
 import time
 
 #TODO:, implement structured betting and folding
-
+#one round of betting
 def place_bets(table):
+    loop_breaker = 0
+    while True:
+        once_around(table)
+        loop_breaker += 1
+        if check_calls(table):
+            break
+        if loop_breaker > 99:
+            break
+    
+
+#check if anyone needs to call        
+def check_calls(table):
+    no_more_bets = True
     for player in table.players:
-        player.bet()
-    print(f"${table.pot: .1f} in the pot")
+        if table.curr_bet - player.curr_pbet != 0 and player.folded == False:
+            no_more_bets = False
+    return no_more_bets
+
+
+#go around the table once
+def once_around(table):
+    for player in table.players[:]:
+        if player.folded == True:
+            continue
+        starting_pot = table.pot
+        player_action = player.player_action()
+        pot_change = table.pot - starting_pot
+        print(f"{player.name}: {player_action[0]} ${player_action[1]}, ${pot_change} in - ${table.pot: .1f} in the pot")
+        
+
+
+
+def check_early_win(table):
+    if len(table.players) == 1:
+        table.round_winners = [table.players[-1]]
+        reset_bets(table)
+        return True
+    else:
+        reset_bets(table)
+        return False
+        
+    
+
 
 def get_winner(table: Table):
-    players = table.players
-    power_level = []
-
-    for player in players:
-        best_hand = player.hand.best_hand
-        hname = best_hand[0]
-        htype = Hand.name.index(best_hand[0])
-        if hname == "High Card":
-            hrank = [best_hand[1].rank_val, 0]
-        elif hname == "Two Pair" or hname == "Full House":
-            hrank = [best_hand[1][1][-1].rank_val, best_hand[1][0][-1].rank_val ]
-        else:
-            hrank = [best_hand[1][-1].rank_val , 0]
-
-        kickval = player.hand.kickers[-1].rank_val
-
-        player.hand.hand_strength = (len(Hand.name) - htype, hrank[0], hrank[1], kickval)
-
+    get_hand_strength(table)
+    players = table.players    
     winners = players[:]
     for i in range(4):
         highest = max([player.hand.hand_strength[i] for player in winners])
@@ -40,6 +64,9 @@ def get_winner(table: Table):
     return [player for player in winners]
 
 
+def print_active_players(table):
+    active_players = ", ".join([player.name for player in table.players])
+    print(f"{active_players} are in the round.")
 
 
 
@@ -112,43 +139,99 @@ def print_all_hands(table):
         
 
 def play_round(table: Table):
+    initialise_round(table)
+    deal_players(table)
+    check_early_win(table)
+    if len(table.round_winners) > 0:
+        pay_out(table.round_winners)
+        return
+    
+    play_flop(table)
+    check_early_win(table)
+    if len(table.round_winners) > 0:
+        pay_out(table.round_winners)
+        return
+
+    play_turn(table)
+    check_early_win(table)
+    if len(table.round_winners) > 0:
+        pay_out(table.round_winners)
+        return
+
+    play_river(table)
+    pay_out(table.round_winners)
+    
+    
+
+def initialise_round(table):
+    table.street = 0
+    #re-add all folded players to the round
+    table.players += table.folded_players
+    #clear the list of folded players
+    table.folded_players = []
+
     for player in table.players:
         print(f"{player.name}: ${player.chips}")
 
+    
     #prompt = input("Deal player cards (Enter)")
-
+def deal_players(table):
     for player in table.players:
         table.deck.deal_player(player,2)
 
     for player in table.players:
         print(player.name)
         print_cards(player.hole_cards)
+    
+    table.street = 1
 
     place_bets(table)
+
     #prompt = input("Deal Flop cards (Enter)")
 
-
+def play_flop(table):
+    
     table.deck.deal_community(table,3)
     print("Flop Cards:")
+    print_active_players(table)
     print_cards(table.community_cards)
+
+    table.street = 2
+
     place_bets(table)
 
-    #prompt = input("Deal Turn Card (Enter)")
 
+    #prompt = input("Deal Turn Card (Enter)")
+def play_turn(table):
+    
     table.deck.deal_community(table,1)
     print("Turn:")
+    print_active_players(table)
     print_cards(table.community_cards)
+
+    table.street = 3
 
     place_bets(table)
     #prompt = input("Deal River Card (Enter)")
+
+def play_river(table):
+    
     table.deck.deal_community(table,1)
     print("River:")
+    print_active_players(table)
     print_cards(table.community_cards)
 
-    print_all_hands(table)
-    print()
-    round_winners = get_winner(table)
+    table.street = 4
 
+    #print_all_hands(table)
+    print()
+    table.round_winners = get_winner(table)
+    reset_table(table)
+    
+    
+    
+
+def pay_out(round_winners):
     reward = table.pot/len(round_winners)
     table.pot = 0
 
@@ -161,15 +244,27 @@ def play_round(table: Table):
     else:
         print(f"{round_winners[0].name} wins ${reward}")
         round_winners[0].chips += reward
+
+#reset bets after a round of betting
+def reset_bets(table):
+    table.curr_bet = 0
+    for player in table.players:
+        player.curr_pbet = 0
     
+    for player in table.folded_players:
+        player.curr_pbet = 0
+
+def reset_table(table):
     #return cards to the deck
     table.deck.cards += table.community_cards
     table.community_cards = []
+    
     for player in table.players:
         table.deck.cards += player.hole_cards
         player.hole_cards = []
+        
 
-players = [Player("Ellie", 100), Player("Jakub",100), Player("Drake2",100)]
+players = [Player("Ellie", 100), Player("Jakub",100), Player("Drake",100)]
 deck = Deck()
 table = Table()
 

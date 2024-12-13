@@ -124,6 +124,7 @@ class Hand:
         self.best_hand = None
         self.kickers = None
         self.hand_strength = None
+        self.confidence = None
 
     name = ["Straight Flush", "Four of a Kind", "Full House" , "Flush", "Straight", "Three of a Kind", "Two Pair", "One Pair",  "High Card" ]
     
@@ -179,7 +180,10 @@ class Hand:
         return kickers
 
 
-        
+    def get_confidence(self):
+        n_unseen = 7 - self.table_cards
+
+
 
 
     def mean_val(self, myhand: list):
@@ -199,10 +203,14 @@ class Hand:
 class Player:
     def __init__(self, name: str, chips: float):
         self.name = name
+        self.table = None
+        self.position = None
         self.hole_cards = []
         self.chips = chips
-        self.table = None
         self.hand = None
+        self.curr_dbet = 0
+        self.curr_pbet = 0
+
 
 #after a card is dealt from the deck class, it updates all players hands at the table
     def update_hand(self):
@@ -210,24 +218,64 @@ class Player:
         self.hand.table_values()
         self.hand.best_hand = self.hand.get_best_hand()
         self.hand.kickers = self.hand.get_kickers()
+        self.hand.confidence = random.randint(1,10)
+        self.folded = False
         
-    def bet(self):
-        hardcoded = True
-        while True:
-            if hardcoded == True:
-                amount = 1
-            else:
-                amount = int(input(f"{self.name} raises by amount (0 to check):"))
+    def player_action(self):
+        play = None
+        confidence = self.hand.confidence
 
-            if self.chips < amount:
-                print('Insufficient funds')
-                continue
+        #if confidence under 4, desired bet is zero. If you cant check, then fold
+        if confidence < 4:
+            self.curr_dbet = 0
+            if self.curr_pbet < self.table.curr_bet:
+                self.curr_pbet = self.table.curr_bet
+                self.fold()
+                return ('Fold', 0)
             else:
-                self.chips -= amount
-                self.table.pot += amount
-                break
+                return ('Check', 0)
+        else:
+            #desired bet is 1x the confidence value
+            self.curr_dbet = 1*confidence
+
+
+        
+        #logic to raise if you desire to bet above the current table bet
+        if self.curr_dbet > self.table.curr_bet:
+            amount = self.curr_dbet - self.table.curr_bet
+            self.bet(self.curr_dbet)
+            self.table.curr_bet = self.curr_dbet
+            self.curr_pbet = self.table.curr_bet
+            return ('Raise', amount)
+        
+        #you dont want to bet that much in a raise, but you will still call.
+        elif self.curr_dbet < self.table.curr_bet:
+            amount = self.table.curr_bet - self.curr_pbet
+            self.bet(amount)
+            self.curr_pbet = self.table.curr_bet
+            return ('Call', amount)
+
+        else: 
+            self.table.curr_pbet = self.table.curr_bet
+            return ('Check', 0)
         
 
+    def bet(self, amount):
+        if amount > self.chips:
+            print('Insufficient funds, fold')
+            self.fold()
+            return
+        
+        self.chips -= amount
+        self.table.pot += amount
+        #update how much the player is currently betting
+        
+        
+    #folds the player, taking it off the player list and adding them to a separate list
+    def fold(self):
+        self.table.players.remove(self)
+        self.table.folded_players.append(self)
+        self.folded = True
         
     def __str__(self):
         print_cards = ""
@@ -237,11 +285,26 @@ class Player:
 
 #initialises an empty playing table
 class Table:
+    #dictionary to map street (betting round) integers to names
+    street_names = {
+        0: 'Pre-game',
+        1: 'Pre-flop',
+        2: 'Flop',
+        3: 'Turn',
+        4: 'River'
+    }
+
     def __init__(self):
         self.deck = None
         self.players = []
+        self.folded_players = []
         self.community_cards = []
         self.pot = 0
+        self.street = 0
+        self.round = 0
+        self.round_winners = []
+        self.curr_bet = 0
+       
     
     def add_deck(self, deck):
         self.deck = deck
@@ -250,6 +313,7 @@ class Table:
     def add_player(self, player):
         self.players.append(player)
         player.table = self
+        player.position = self.players.index(player)
     
     def __str__(self):
         print_str = ""
@@ -341,3 +405,19 @@ def get_straight_flush(table_cards: list):
     return [st_flush[-5:] for st_flush in straight_flushes]
 
 
+def get_hand_strength(table: Table):
+    players = table.players
+    for player in players:
+        best_hand = player.hand.best_hand
+        hname = best_hand[0]
+        htype = Hand.name.index(best_hand[0])
+        if hname == "High Card":
+            hrank = [best_hand[1].rank_val, 0]
+        elif hname == "Two Pair" or hname == "Full House":
+            hrank = [best_hand[1][1][-1].rank_val, best_hand[1][0][-1].rank_val ]
+        else:
+            hrank = [best_hand[1][-1].rank_val , 0]
+
+        kickval = player.hand.kickers[-1].rank_val
+
+        player.hand.hand_strength = (len(Hand.name) - htype, hrank[0], hrank[1], kickval)
