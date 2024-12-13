@@ -1,8 +1,9 @@
 from cards import Player, Hand, Deck, Table, print_cards, Card
 import copy
+import time
 
-#TODO: Put cards back in deck after round, implement betting, implement auto detection of winning hand
-#implement kicker card and pot splitting.
+#TODO:, implement structured betting and folding
+
 def place_bets(table):
     for player in table.players:
         player.bet()
@@ -114,7 +115,7 @@ def play_round(table: Table):
     for player in table.players:
         print(f"{player.name}: ${player.chips}")
 
-    prompt = input("Deal player cards (Enter)")
+    #prompt = input("Deal player cards (Enter)")
 
     for player in table.players:
         table.deck.deal_player(player,2)
@@ -124,7 +125,7 @@ def play_round(table: Table):
         print_cards(player.hole_cards)
 
     place_bets(table)
-    prompt = input("Deal Flop cards (Enter)")
+    #prompt = input("Deal Flop cards (Enter)")
 
 
     table.deck.deal_community(table,3)
@@ -132,14 +133,14 @@ def play_round(table: Table):
     print_cards(table.community_cards)
     place_bets(table)
 
-    prompt = input("Deal Turn Card (Enter)")
+    #prompt = input("Deal Turn Card (Enter)")
 
     table.deck.deal_community(table,1)
     print("Turn:")
     print_cards(table.community_cards)
 
     place_bets(table)
-    prompt = input("Deal River Card (Enter)")
+    #prompt = input("Deal River Card (Enter)")
     table.deck.deal_community(table,1)
     print("River:")
     print_cards(table.community_cards)
@@ -165,9 +166,10 @@ def play_round(table: Table):
     table.deck.cards += table.community_cards
     table.community_cards = []
     for player in table.players:
+        table.deck.cards += player.hole_cards
         player.hole_cards = []
 
-players = [Player("Tom", 100), Player("Harry",100), Player("John",100)]
+players = [Player("Ellie", 100), Player("Jakub",100), Player("Drake2",100)]
 deck = Deck()
 table = Table()
 
@@ -177,8 +179,12 @@ for player in players:
     table.add_player(player)
 n_rounds = int(input("How many rounds?"))
 
+start_time = time.time()
 for i in range(n_rounds):
     play_round(table)
 
+end_time = time.time()
 for player in table.players:
     print(f"{player.name}: ${player.chips}")
+
+print(f"{end_time - start_time} seconds per {n_rounds} rounds")
