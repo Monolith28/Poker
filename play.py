@@ -26,6 +26,8 @@ def check_calls(table):
 
 #go around the table once
 def once_around(table):
+    if len(table.players) == 1:
+        return
     for player in table.players[:]:
         if player.folded == True:
             continue
@@ -250,9 +252,11 @@ def reset_bets(table):
     table.curr_bet = 0
     for player in table.players:
         player.curr_pbet = 0
+        player.curr_dbet = 0
     
     for player in table.folded_players:
         player.curr_pbet = 0
+        player.curr_dbet = 0
 
 def reset_table(table):
     #return cards to the deck
@@ -264,7 +268,7 @@ def reset_table(table):
         player.hole_cards = []
         
 
-players = [Player("Ellie", 100), Player("Jakub",100), Player("Drake",100)]
+players = [Player("Ellie", 100), Player("Jakub",100), Player("Drake",100), Player("Diddy", 100)]
 deck = Deck()
 table = Table()
 
